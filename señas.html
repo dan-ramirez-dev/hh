@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manux - Aprende Lenguaje de Señas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- MediaPipe y TFJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+        
+        :root {
+            --primary-dark: #033860;
+            --primary-light: #7699D4;
+            --accent-orange: #EE6C4D;
+            --success-mint: #AFD0BF;
+            --bg-gray: #F8FAFC;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--primary-dark);
+        }
+
+        .duo-card {
+            border: 2px solid #e2e8f0;
+            border-bottom: 6px solid #cbd5e1;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .duo-card:active {
+            border-bottom-width: 2px;
+            transform: translateY(4px);
+        }
+
+        .btn-action {
+            background-color: var(--accent-orange);
+            border-bottom: 5px solid #d45639;
+            color: white;
+        }
+
+        .btn-action:hover { background-color: #f18066; }
+        .btn-action:active { border-bottom-width: 0px; transform: translateY(5px); }
+
+        .btn-outline {
+            border: 2px solid var(--primary-light);
+            border-bottom: 5px solid var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        .progress-bar {
+            height: 14px;
+            background-color: #e2e8f0;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--success-mint);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #video-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            border: 4px solid var(--primary-light);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .hidden { display: none; }
+
+        .logo-text {
+            color: var(--primary-dark);
+            font-weight: 900;
+            letter-spacing: -0.05em;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Header / Navbar -->
+    <nav class="bg-white border-b-2 border-slate-200 py-3 px-6 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="showView('main-menu')">
+                <!-- SVG Logo recreado basado en la imagen -->
+                <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M50 20C35 20 25 30 25 45V65" stroke="#033860" stroke-width="6" stroke-linecap="round"/>
+                    <path d="M35 50C35 65 45 75 50 75C55 75 65 65 65 50" stroke="#033860" stroke-width="6" stroke-linecap="round"/>
+                    <path d="M50 20C65 20 75 30 75 45V65" stroke="#033860" stroke-width="6" stroke-linecap="round"/>
+                    <circle cx="35" cy="65" r="5" fill="#EE6C4D"/>
+                    <circle cx="65" cy="65" r="5" fill="#EE6C4D"/>
+                </svg>
+                <h1 class="text-3xl logo-text">Manux</h1>
+            </div>
+            <div class="flex gap-6">
+                <span class="flex items-center gap-2 font-black text-[#EE6C4D]">
+                    <i class="fas fa-fire-alt"></i> 12
+                </span>
+                <span class="flex items-center gap-2 font-black text-[#7699D4]">
+                    <i class="fas fa-medal"></i> 340
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto p-6 mt-4">
+        
+        <!-- MAIN MENU -->
+        <div id="main-menu" class="view">
+            <header class="text-center mb-10">
+                <h2 class="text-3xl font-black mb-2">¡Hola! Elige tu desafío</h2>
+                <p class="text-slate-500 font-bold">Aprende señas paso a paso con Manux</p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Nivel 1 -->
+                <div onclick="startLevel(1)" class="duo-card p-8 rounded-3xl cursor-pointer text-center group">
+                    <div class="w-24 h-24 bg-[#7699D4] rounded-full flex items-center justify-center mx-auto mb-6 text-white text-4xl border-b-8 border-[#5a7eb8] transition-transform group-hover:scale-110">
+                        <i class="fas fa-font"></i>
+                    </div>
+                    <h3 class="text-2xl font-black mb-1">Nivel 1</h3>
+                    <p class="text-slate-400 font-bold mb-6 italic">Letras A hasta M</p>
+                    <div class="progress-bar mb-2"><div class="progress-fill" style="width: 70%"></div></div>
+                </div>
+
+                <!-- Nivel 2 -->
+                <div onclick="startLevel(2)" class="duo-card p-8 rounded-3xl cursor-pointer text-center group">
+                    <div class="w-24 h-24 bg-[#AFD0BF] rounded-full flex items-center justify-center mx-auto mb-6 text-white text-4xl border-b-8 border-[#8fb3a0] transition-transform group-hover:scale-110">
+                        <i class="fas fa-spell-check"></i>
+                    </div>
+                    <h3 class="text-2xl font-black mb-1">Nivel 2</h3>
+                    <p class="text-slate-400 font-bold mb-6 italic">Letras N hasta Z</p>
+                    <div class="progress-bar mb-2"><div class="progress-fill" style="width: 25%"></div></div>
+                </div>
+
+                <!-- Nivel 3 -->
+                <div onclick="startLevel(3)" class="duo-card p-8 rounded-3xl cursor-pointer text-center group">
+                    <div class="w-24 h-24 bg-[#EE6C4D] rounded-full flex items-center justify-center mx-auto mb-6 text-white text-4xl border-b-8 border-[#c25036] transition-transform group-hover:scale-110">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <h3 class="text-2xl font-black mb-1">Nivel 3</h3>
+                    <p class="text-slate-400 font-bold mb-6 italic">Práctica con Cámara</p>
+                    <div class="progress-bar mb-2"><div class="progress-fill" style="width: 0%"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STUDY PHASE -->
+        <div id="study-phase" class="view hidden">
+            <div class="flex items-center gap-6 mb-10">
+                <button onclick="showView('main-menu')" class="text-slate-300 hover:text-slate-500 text-2xl transition-colors"><i class="fas fa-times"></i></button>
+                <div class="progress-bar flex-grow"><div id="study-progress" class="progress-fill" style="width: 20%"></div></div>
+            </div>
+            <div class="text-center">
+                <h2 class="text-3xl font-black mb-10">Diccionario Visual</h2>
+                <div id="cards-container" class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+                    <!-- Cards via JS -->
+                </div>
+                <button onclick="startQuiz()" class="btn-action w-full md:w-80 py-4 rounded-2xl font-black text-xl uppercase tracking-wider">¡Aceptar el reto!</button>
+            </div>
+        </div>
+
+        <!-- QUIZ PHASE -->
+        <div id="quiz-phase" class="view hidden">
+            <div class="flex items-center gap-6 mb-10">
+                <button onclick="showView('main-menu')" class="text-slate-300 text-2xl"><i class="fas fa-times"></i></button>
+                <div class="progress-bar flex-grow"><div id="quiz-progress" class="progress-fill" style="width: 0%"></div></div>
+            </div>
+            <div class="max-w-lg mx-auto text-center">
+                <h2 class="text-3xl font-black mb-8 text-[#033860]">¿Qué letra es esta?</h2>
+                <div class="bg-white duo-card rounded-3xl p-10 mb-10 shadow-sm">
+                    <img id="quiz-image" src="" alt="Seña" class="mx-auto h-52 object-contain filter drop-shadow-md">
+                </div>
+                <div id="quiz-options" class="grid grid-cols-2 gap-4">
+                    <!-- Options via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- VISION PHASE (Level 3) -->
+        <div id="vision-phase" class="view hidden">
+            <div class="flex items-center gap-6 mb-10">
+                <button onclick="stopCamera(); showView('main-menu')" class="text-slate-300 text-2xl"><i class="fas fa-times"></i></button>
+                <h2 class="text-2xl font-black flex-grow text-center">Haz la seña: <span id="target-letter" class="text-[#EE6C4D] text-4xl ml-2">A</span></h2>
+            </div>
+            
+            <div id="video-container">
+                <video id="input-video" class="w-full h-auto scale-x-[-1]" playsinline></video>
+                <canvas id="output-canvas" class="scale-x-[-1]"></canvas>
+                <div id="loading-overlay" class="absolute inset-0 bg-white bg-opacity-90 flex flex-col items-center justify-center z-10">
+                    <div class="w-16 h-16 border-4 border-[#7699D4] border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p class="font-black text-[#033860]">Calibrando Manux Vision...</p>
+                </div>
+            </div>
+
+            <div class="mt-10 max-w-md mx-auto">
+                <div id="feedback-msg" class="text-xl font-black py-5 px-6 rounded-2xl shadow-sm text-center hidden">
+                    <!-- Feedback -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Success/Fail Overlay -->
+    <div id="result-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-end justify-center z-[100] hidden">
+        <div id="result-content" class="w-full bg-white p-10 rounded-t-[3rem] max-w-4xl transition-all">
+            <div class="flex items-center gap-6 mb-8 max-w-md mx-auto">
+                <div id="result-icon" class="w-16 h-16 rounded-full flex items-center justify-center text-white text-3xl shadow-lg"></div>
+                <h3 id="result-title" class="text-3xl font-black"></h3>
+            </div>
+            <div class="max-w-md mx-auto">
+                <button id="next-btn" class="w-full py-5 rounded-2xl font-black text-xl uppercase tracking-widest text-white shadow-lg"></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+        let currentLevel = 1;
+        let currentLevelData = [];
+        let currentQuizIndex = 0;
+        let quizQuestions = [];
+        let cameraActive = false;
+
+        // Colores de la marca
+        const COLORS = {
+            dark: '#033860',
+            light: '#7699D4',
+            accent: '#EE6C4D',
+            success: '#AFD0BF'
+        };
+
+        const getSignImg = (letter) => `https://img.icons8.com/color/144/null/sign-language-${letter.toLowerCase()}.png`;
+
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+            window.scrollTo(0,0);
+        }
+
+        function startLevel(level) {
+            currentLevel = level;
+            if (level === 1) {
+                currentLevelData = alphabet.slice(0, 13);
+                setupStudy();
+            } else if (level === 2) {
+                currentLevelData = alphabet.slice(13);
+                setupStudy();
+            } else {
+                startVisionLevel();
+            }
+        }
+
+        function setupStudy() {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+            currentLevelData.forEach(letter => {
+                const card = document.createElement('div');
+                card.className = "duo-card p-5 rounded-2xl flex flex-col items-center hover:bg-slate-50";
+                card.innerHTML = `
+                    <img src="${getSignImg(letter)}" alt="${letter}" class="h-24 mb-3 filter drop-shadow-sm">
+                    <span class="text-2xl font-black text-[#033860]">${letter}</span>
+                `;
+                container.appendChild(card);
+            });
+            showView('study-phase');
+        }
+
+        function startQuiz() {
+            currentQuizIndex = 0;
+            quizQuestions = [...currentLevelData].sort(() => Math.random() - 0.5).slice(0, 5);
+            nextQuestion();
+            showView('quiz-phase');
+        }
+
+        function nextQuestion() {
+            if (currentQuizIndex >= quizQuestions.length) {
+                showResultOverlay(true, "¡Nivel superado!", "Terminar", () => showView('main-menu'));
+                return;
+            }
+
+            const letter = quizQuestions[currentQuizIndex];
+            const progress = (currentQuizIndex / quizQuestions.length) * 100;
+            document.getElementById('quiz-progress').style.width = `${progress}%`;
+            document.getElementById('quiz-image').src = getSignImg(letter);
+
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+
+            let options = [letter];
+            while (options.length < 4) {
+                let randomLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
+                if (!options.includes(randomLetter)) options.push(randomLetter);
+            }
+            options.sort(() => Math.random() - 0.5);
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "duo-card p-6 rounded-2xl bg-white font-black text-2xl hover:bg-slate-50 transition-colors text-[#033860]";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, letter);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected, correct) {
+            const isCorrect = selected === correct;
+            const title = isCorrect ? "¡Perfecto!" : `Incorrecto, es la ${correct}`;
+            showResultOverlay(isCorrect, title, "Siguiente", () => {
+                currentQuizIndex++;
+                nextQuestion();
+            });
+        }
+
+        function showResultOverlay(isCorrect, title, btnText, callback) {
+            const overlay = document.getElementById('result-overlay');
+            const content = document.getElementById('result-content');
+            const icon = document.getElementById('result-icon');
+            const titleEl = document.getElementById('result-title');
+            const btn = document.getElementById('next-btn');
+
+            overlay.classList.remove('hidden');
+            titleEl.innerText = title;
+            btn.innerText = btnText;
+
+            if (isCorrect) {
+                content.style.backgroundColor = "#F1F8F5";
+                titleEl.style.color = COLORS.dark;
+                icon.style.backgroundColor = COLORS.success;
+                icon.innerHTML = '<i class="fas fa-check"></i>';
+                btn.className = "btn-action w-full py-5 rounded-2xl font-black text-xl uppercase tracking-widest text-white shadow-md";
+                btn.style.backgroundColor = COLORS.accent;
+            } else {
+                content.style.backgroundColor = "#FEF2F2";
+                titleEl.style.color = "#991B1B";
+                icon.style.backgroundColor = "#EF4444";
+                icon.innerHTML = '<i class="fas fa-times"></i>';
+                btn.className = "w-full py-5 rounded-2xl font-black text-xl uppercase tracking-widest text-white bg-red-600 border-b-8 border-red-800";
+            }
+
+            btn.onclick = () => {
+                overlay.classList.add('hidden');
+                callback();
+            };
+        }
+
+        // --- MEDIAPIPE ---
+        let hands;
+        let camera;
+        let targetLetter = 'A';
+
+        function startVisionLevel() {
+            showView('vision-phase');
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            targetLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
+            document.getElementById('target-letter').innerText = targetLetter;
+            initMediaPipe();
+        }
+
+        async function initMediaPipe() {
+            const videoElement = document.getElementById('input-video');
+            const canvasElement = document.getElementById('output-canvas');
+            const canvasCtx = canvasElement.getContext('2d');
+
+            hands = new Hands({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+            });
+
+            hands.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.6,
+                minTrackingConfidence: 0.6
+            });
+
+            hands.onResults((results) => {
+                canvasCtx.save();
+                canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+                
+                if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                    drawConnectors(canvasCtx, results.multiHandLandmarks[0], HAND_CONNECTIONS, {color: COLORS.light, lineWidth: 4});
+                    drawLandmarks(canvasCtx, results.multiHandLandmarks[0], {color: COLORS.accent, lineWidth: 1, radius: 4});
+                    evaluateGesture(results.multiHandLandmarks[0]);
+                }
+                canvasCtx.restore();
+            });
+
+            camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    await hands.send({image: videoElement});
+                    document.getElementById('loading-overlay').classList.add('hidden');
+                },
+                width: 640,
+                height: 480
+            });
+            camera.start();
+            cameraActive = true;
+        }
+
+        function evaluateGesture(landmarks) {
+            const feedback = document.getElementById('feedback-msg');
+            feedback.classList.remove('hidden');
+            
+            if (landmarks) {
+                feedback.innerText = "Manux está observando...";
+                feedback.className = "text-xl font-black py-4 px-6 rounded-2xl bg-[#E0E7FF] text-[#4338CA]";
+                
+                // Simulación de validación (el esqueleto detecta la presencia de mano)
+                // En un sistema real usaríamos landmarks[8] (dedo índice) etc.
+                if (landmarks[0].y < 0.8) {
+                    setTimeout(() => {
+                        if (cameraActive) {
+                            feedback.innerText = `¡Excelente! Seña ${targetLetter} detectada.`;
+                            feedback.className = "text-xl font-black py-4 px-6 rounded-2xl bg-[#D1FAE5] text-[#065F46]";
+                            
+                            setTimeout(() => {
+                                if(cameraActive) {
+                                    targetLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
+                                    document.getElementById('target-letter').innerText = targetLetter;
+                                }
+                            }, 1500);
+                        }
+                    }, 2500);
+                }
+            }
+        }
+
+        function stopCamera() {
+            cameraActive = false;
+            if (camera) camera.stop();
+        }
+
+        window.onload = () => showView('main-menu');
+    </script>
+</body>
+</html>
